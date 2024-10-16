@@ -1,47 +1,83 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js'; // Import the user model
+import User from '../models/User.js';
 
-// Register new user
-export const registerUser = async (data) => {
-    try {
-        // Ensure prnNumber uniqueness instead of email only if you want to use prnNumber for login
-        const existingUser = await User.findOne({ prnNumber: data.prnNumber });
-        if (existingUser) throw new Error('User with this PRN number already exists');
+const JWT_SECRET = 'your_jwt_secret'; // Use a secure key in a real application
 
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        const user = new User({ ...data, password: hashedPassword });
+class AuthService {
+    // Register student
+    static async registerStudent(data) {
+        const user = new User(data);
         await user.save();
-
-        const token = generateToken(user._id);
-
-        return { token, user: { ...user.toObject(), password: undefined } };
-    } catch (error) {
-        console.error("Registration error:", error.message);
-        throw new Error(error.message);
+        return user;
     }
-};
 
-export const loginUser = async ({ prnNumber, password }) => {
-    try {
-        // Find user by prnNumber
+    // Register admin
+    static async registerAdmin(data) {
+        const admin = new User({ ...data, role: 'admin' });
+        await admin.save();
+        return admin;
+    }
+
+    // Login logic for students
+    static async login(prnNumber, password) {
         const user = await User.findOne({ prnNumber });
-        if (!user) throw new Error('Invalid credentials');
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            throw new Error('Invalid password');
+        }
 
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) throw new Error('Invalid credentials');
+        // Generate JWT token
+        const token = jwt.sign({ id: user._id, prnNumber: user.prnNumber }, JWT_SECRET, { expiresIn: '1h' });
 
-        const token = generateToken(user._id);
-        return { token, user: { ...user.toObject(), password: undefined } };
-    } catch (error) {
-        console.error("Login error:", error.message);
-        throw new Error(error.message);
+        return { user, token };
     }
-};
 
-// Generate JWT token
-export const generateToken = (userId) => {
-    const payload = { userId };
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '1h' });
-    return token;
-};
+    // Login logic for admins
+    static async adminLogin(dte, password) {
+        const admin = await User.findOne({ dte });
+        if (!admin) {
+            throw new Error('Admin not found');
+        }
+        const isMatch = await admin.comparePassword(password);
+        if (!isMatch) {
+            throw new Error('Invalid password');
+        }
+
+        // Generate JWT token for admin
+        const token = jwt.sign({ id: admin._id, dte: admin.dte }, JWT_SECRET, { expiresIn: '1h' });
+
+        return { admin, token };
+    }
+
+    // Get profile
+    static async getProfile(userId) {
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return user;
+    }
+
+    // Update profile
+    static async updateProfile(userId, data) {
+        const updatedUser = await User.findByIdAndUpdate(userId, data, { new: true });
+        if (!updatedUser) {
+            throw new Error('User not found');
+        }
+        return updatedUser;
+    }
+
+    // Delete profile
+    static async deleteProfile(userId) {
+        const user = await User.findByIdAndDelete(userId);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return;
+    }
+}
+
+export default AuthService;
