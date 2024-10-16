@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes.js'; // Ensure you have userRoutes set up correctly
+import userRoutes from './routes/userRoutes.js';
 
 dotenv.config();
 
@@ -23,11 +23,10 @@ const connectDB = async () => {
         console.log('MongoDB connected');
     } catch (err) {
         console.error('MongoDB connection error:', err);
-        process.exit(1); // Exit the process if the connection fails
+        process.exit(1);
     }
 };
 
-// Call the connectDB function
 connectDB();
 
 // Routes
