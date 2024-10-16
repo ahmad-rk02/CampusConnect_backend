@@ -61,7 +61,12 @@ userSchema.methods.comparePassword = function (password) {
 };
 
 // Add a unique index for prnNumber but only for students
-userSchema.index({ prnNumber: 1, role: 1 }, { unique: true, sparse: true });
+userSchema.index({ prnNumber: 1, role: 1 }, { 
+    unique: true, 
+    sparse: true,
+    partialFilterExpression: { role: 'student' } // Only apply uniqueness for students
+});
+
 
 const User = mongoose.model('User', userSchema);
 export default User;
