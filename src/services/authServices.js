@@ -1,7 +1,10 @@
+import nodemailer from 'nodemailer';
+import otpGenerator from 'otp-generator';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 const JWT_SECRET = 'your_jwt_secret'; // Use a secure key in a real application
+const OTP_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 class AuthService {
     // Register student
@@ -77,6 +80,74 @@ class AuthService {
             throw new Error('User not found');
         }
         return;
+    }
+
+      // Generate and send OTP
+      static async sendOTP(email) {
+        const otp = otpGenerator.generate(6, { upperCase: false, specialChars: false });
+        // Save OTP and its expiry in user record
+        const user = await User.findOneAndUpdate(
+            { email },
+            { otp, otpExpiry: Date.now() + OTP_EXPIRY },
+            { new: true }
+        );
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Configure the email transport
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail', // Use your email service
+            auth: {
+                user: 'razakhanahmad68@gmail.com', // Your email
+                pass: 'kbol dggl zzzt xumr', // Your email password or app-specific password
+            },
+        });
+
+        // Send the OTP via email
+        await transporter.sendMail({
+            from: '"CampusConnect"<razakhanahmad68@gmail.com>',
+            to: user.email,
+            subject: 'Your OTP Code',
+            text: `Your OTP code is ${otp}. It is valid for 5 minutes.`,
+        });
+
+        return user; // Return user for further operations if needed
+    }
+
+    // Verify OTP
+    static async verifyOTP(email, otp) {
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        if (user.otp !== otp || Date.now() > user.otpExpiry) {
+            throw new Error('Invalid or expired OTP');
+        }
+
+        // Clear OTP after successful verification
+        user.otp = null;
+        user.otpExpiry = null;
+        await user.save();
+
+        return user;
+    }
+
+    // Reset password
+    static async resetPassword(email, newPassword) {
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        user.password = newPassword; // This will trigger password hashing in the pre-save hook
+        await user.save();
+
+        return user;
     }
 }
 

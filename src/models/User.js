@@ -44,7 +44,9 @@ const userSchema = new mongoose.Schema({
         required: function () {
             return this.role === 'admin'; // Required only for admins
         }
-    } // Committee for admin
+    } ,// Committee for admin
+    otp: { type: String, default: null },
+    otpExpiry: { type: Date, default: null },
 });
 
 // Hash the password before saving

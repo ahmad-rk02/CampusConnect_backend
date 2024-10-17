@@ -114,6 +114,41 @@ class AuthController {
             res.status(500).json({ error: error.message });
         }
     }
+
+      // Send OTP for password reset
+      static async sendResetOTP(req, res) {
+        try {
+            const { email } = req.body;
+            const user = await AuthService.sendOTP(email);
+            res.status(200).json({ message: 'OTP sent to your email', user });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // Verify OTP
+    static async verifyResetOTP(req, res) {
+        try {
+            const { email, otp } = req.body;
+            const user = await AuthService.verifyOTP(email, otp);
+            res.status(200).json({ message: 'OTP verified successfully', user });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // Reset password
+    static async resetPassword(req, res) {
+        try {
+            const { email, newPassword } = req.body;
+            const user = await AuthService.resetPassword(email, newPassword);
+            res.status(200).json({ message: 'Password reset successfully', user });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }
+    
+
 
 export default AuthController;
