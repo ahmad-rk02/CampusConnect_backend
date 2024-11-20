@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js';
-
+import grievanceRoutes from './routes/grievanceRoutes.js'
 dotenv.config();
 
 // Initialize the app
@@ -31,6 +31,7 @@ connectDB();
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/grievances', grievanceRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
