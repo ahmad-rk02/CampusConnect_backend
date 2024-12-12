@@ -7,11 +7,23 @@ const router = express.Router();
 router.post('/submit', submitGrievance);
 router.post('/close/:ticketId', closeGrievance);
 router.get('/fetchgrievance', async (req, res) => {
-    try {
-      const grievances = await Grievance.find(); // Fetch all grievances from DB
-      res.status(200).json(grievances); // Return the list of grievances
-    } catch (err) {
-      res.status(500).json({ message: 'Failed to fetch grievances' });
+  const { commonId } = req.query; // 'all' for admin, email for users
+  console.log('Received commonId:', commonId);
+
+  try {
+    let grievances;
+    if (commonId === 'all') {
+      // Fetch all grievances for admin
+      grievances = await Grievance.find({});
+    } else {
+      // Fetch grievances for the specific user
+      grievances = await Grievance.find({ email: commonId });
     }
-  });
+    res.json(grievances);
+  } catch (error) {
+    console.error('Error fetching grievances:', error);
+    res.status(500).json({ error: 'Failed to fetch grievances.' });
+  }
+});
+
 export default router;
