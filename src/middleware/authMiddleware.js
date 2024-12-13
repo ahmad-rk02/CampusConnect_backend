@@ -1,17 +1,17 @@
+
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+
+const JWT_SECRET = 'your_jwt_secret';
 
 const authMiddleware = (req, res, next) => {
-    const token = req.header('Authorization')?.split(' ')[1]; // Get token from the Authorization header
-    if (!token) {
-        return res.status(401).json({ msg: 'No token, authorization denied' });
-    }
-
+    const token = req.header('Authorization').replace('Bearer ', '');
     try {
-        const decoded = jwt.verify(token, 'your_jwt_secret'); // Use your secret here
-        req.user = decoded.userId; // Attach user ID to request for later use
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded; // Attach decoded token data to request
         next();
-    } catch (err) {
-        res.status(401).json({ msg: 'Token is not valid' });
+    } catch (error) {
+        res.status(401).json({ error: 'Please authenticate' });
     }
 };
 

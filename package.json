@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
@@ -20,9 +21,16 @@
     "express-validator": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.9.0",
+<<<<<<< HEAD
     "mongoose": "^8.7.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
+=======
+    "mongoose": "^8.7.0",
+    "nodemailer": "^6.9.15",
+    "nodemon": "^3.1.7",
+    "otp-generator": "^4.0.1"
+>>>>>>> 1335cd92bfda9033f4751936838c333683000b2d
   }
 }
