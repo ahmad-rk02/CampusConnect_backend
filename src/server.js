@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.js';
 import grievanceRoutes from './routes/grievanceRoutes.js'
+ 
+
 dotenv.config();
 
 // Initialize the app
@@ -12,7 +14,7 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json()); // Parse incoming JSON requests
-
+ 
 // Connect to MongoDB
 const connectDB = async () => {
     try {
