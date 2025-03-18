@@ -2,8 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes.js';
-import grievanceRoutes from './routes/grievanceRoutes.js'
+import userRoutes from './src/routes/userRoutes.js';
+import grievanceRoutes from './src/routes/grievanceRoutes.js'
  
 
 dotenv.config();
@@ -41,6 +41,9 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
+app.get("/",(req,res)=>{
+    res.json({message:"hello world"});
+});
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
