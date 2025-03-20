@@ -5,14 +5,23 @@ import dotenv from 'dotenv';
 import userRoutes from './src/routes/userRoutes.js';
 import grievanceRoutes from './src/routes/grievanceRoutes.js'
  
-
 dotenv.config();
 
 // Initialize the app
 const app = express();
 
+// ✅ CORS Configuration
+const allowedOrigins = [
+    'https://gcoec-campusconnect.netlify.app', // Frontend URL
+];
+
+app.use(cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true // Allow cookies and headers
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json()); // Parse incoming JSON requests
  
 // Connect to MongoDB
