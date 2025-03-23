@@ -7,12 +7,16 @@ const grievanceSchema = new mongoose.Schema({
   universityNumber: { type: String, required: true },
   branch: { type: String, required: true },
   semester: { type: String, required: true },
-  grievanceType: { type: String, required: true },
+  grievanceType: { type: String, required: true, enum: ['departmental', 'office', 'others'] },
   message: { type: String, required: true },
   ticketId: { type: String, required: true, unique: true },
-  status: { type: String, default: 'open' }, // Initially 'open'
-  remarks: { type: String, default: '' },   // Remarks from admin
-  createdAt: { type: Date, default: Date.now }
+  status: { 
+    type: String, 
+    enum: ['not resolved', 'in progress', 'resolved'], 
+    default: 'not resolved' 
+  },
+  remarks: { type: String, default: '' },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const Grievance = mongoose.model('Grievance', grievanceSchema);

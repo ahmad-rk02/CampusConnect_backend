@@ -13,7 +13,7 @@ const app = express();
 
 // CORS Configuration
 const allowedOrigins = [
-    'http://localhost:5173', // Add local dev URL (adjust port if different)
+    'http://localhost:5000', 
     'https://gcoec-campusconnect.netlify.app', // Your frontend URL
 ];
 
