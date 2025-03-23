@@ -7,20 +7,73 @@ const JWT_SECRET = 'your_jwt_secret'; // Use a secure key in a real application
 const OTP_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 class AuthService {
-    // Register student
     static async registerStudent(data) {
         const user = new User(data);
+        const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+        user.otp = otp;
+        user.otpExpiry = Date.now() + OTP_EXPIRY;
+        await user.save();
+        await this.sendOTP(user.email, otp);
+        return user;
+    }
+
+    static async registerAdmin(data) {
+        const admin = new User({ ...data, role: 'admin' });
+        const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+        admin.otp = otp;
+        admin.otpExpiry = Date.now() + OTP_EXPIRY;
+        await admin.save();
+        await this.sendOTP(admin.email, otp);
+        return admin;
+    }
+
+    static async sendOTP(email, otp) {
+        const user = await User.findOne({ email });
+        if (!user) throw new Error('User not found');
+
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: 'razakhanahmad68@gmail.com',
+                pass: 'kbol dggl zzzt xumr',
+            },
+        });
+
+        await transporter.sendMail({
+            from: '"CampusConnect" <razakhanahmad68@gmail.com>',
+            to: email,
+            subject: 'Your Registration OTP Code',
+            text: `Your OTP code is ${otp}. It is valid for 5 minutes.`,
+        });
+    }
+
+    static async verifySignupOTP(email, otp) {
+        const user = await User.findOne({ email });
+        if (!user) throw new Error('User not found');
+        if (user.otp !== otp || Date.now() > user.otpExpiry) {
+            throw new Error('Invalid or expired OTP');
+        }
+        user.otp = null;
+        user.otpExpiry = null;
+        user.isVerified = true;
         await user.save();
         return user;
     }
 
-    // Register admin
-    static async registerAdmin(data) {
-        const admin = new User({ ...data, role: 'admin' });
-        await admin.save();
-        return admin;
-    }
+    // New method to resend OTP
+    static async resendOTP(email) {
+        const user = await User.findOne({ email });
+        if (!user) throw new Error('User not found');
+        if (user.isVerified) throw new Error('User is already verified');
 
+        const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
+        user.otp = otp;
+        user.otpExpiry = Date.now() + OTP_EXPIRY;
+        await user.save();
+        await this.sendOTP(email, otp);
+        return { message: 'OTP resent successfully' };
+    }
+    
     // Login logic for students
     static async login(prnNumber, password) {
         const user = await User.findOne({ prnNumber });
@@ -82,8 +135,8 @@ class AuthService {
         return;
     }
 
-      // Generate and send OTP
-      static async sendOTP(email) {
+    // Generate and send OTP
+    static async sendOTP(email) {
         const otp = otpGenerator.generate(6, { upperCase: false, specialChars: false });
         // Save OTP and its expiry in user record
         const user = await User.findOneAndUpdate(

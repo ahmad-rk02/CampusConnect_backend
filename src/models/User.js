@@ -17,7 +17,6 @@ const userSchema = new mongoose.Schema({
         },
         sparse: true,
         unique: true,
-        // No unique constraint here, handled by the index
     },
     semester: {
         type: String,
@@ -37,16 +36,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: function () {
             return this.role === 'admin'; // Required only for admins
-        }
-    }, // DTE for admin
+        },
+        sparse: true,
+        unique: true, // Ensure DTE is unique for admins
+    },
     committee: {
         type: String,
         required: function () {
             return this.role === 'admin'; // Required only for admins
         }
-    } ,// Committee for admin
-    otp: { type: String, default: null },
-    otpExpiry: { type: Date, default: null },
+    },
+    otp: { type: String, default: null }, // OTP for verification
+    otpExpiry: { type: Number, default: null }, // Timestamp for OTP expiry (in milliseconds)
+    isVerified: { type: Boolean, default: false }, // Tracks if the user is verified
 });
 
 // Hash the password before saving
@@ -58,17 +60,29 @@ userSchema.pre('save', async function (next) {
 });
 
 // Method to compare password
-userSchema.methods.comparePassword = function (password) {
+userSchema.methods.comparePassword = async function (password) {
     return bcrypt.compare(password, this.password);
 };
 
 // Add a unique index for prnNumber but only for students
-userSchema.index({ prnNumber: 1, role: 1 }, { 
-    unique: true, 
-    sparse: true,
-    partialFilterExpression: { role: 'student' } // Only apply uniqueness for students
-});
+userSchema.index(
+    { prnNumber: 1, role: 1 },
+    {
+        unique: true,
+        sparse: true,
+        partialFilterExpression: { role: 'student' } // Only apply uniqueness for students
+    }
+);
 
+// Add a unique index for dte but only for admins
+userSchema.index(
+    { dte: 1, role: 1 },
+    {
+        unique: true,
+        sparse: true,
+        partialFilterExpression: { role: 'admin' } // Only apply uniqueness for admins
+    }
+);
 
 const User = mongoose.model('User', userSchema);
 export default User;

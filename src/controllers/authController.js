@@ -1,16 +1,45 @@
 import AuthService from '../services/authServices.js';
+import jwt from 'jsonwebtoken'; // Add this import
 
+const JWT_SECRET = 'your_jwt_secret'; //
 class AuthController {
-    // Student sign-up
     static async studentSignup(req, res) {
         try {
             const user = await AuthService.registerStudent(req.body);
-            res.status(201).json({ message: 'Student registered successfully', user });
+            res.status(201).json({ message: 'OTP sent to email. Please verify to complete registration.', userId: user._id });
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
     }
 
+    static async adminSignup(req, res) {
+        try {
+            const admin = await AuthService.registerAdmin(req.body);
+            res.status(201).json({ message: 'OTP sent to email. Please verify to complete registration.', userId: admin._id });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    static async verifySignupOTP(req, res) {
+        const { email, otp } = req.body;
+        try {
+            const user = await AuthService.verifySignupOTP(email, otp);
+            const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1h' }); // Use JWT_SECRET here
+            res.status(200).json({ message: 'Registration confirmed!', user, token });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+    static async resendSignupOTP(req, res) {
+        const { email } = req.body;
+        try {
+            const result = await AuthService.resendOTP(email);
+            res.status(200).json(result);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
     // Student login
     static async studentLogin(req, res) {
         try {
@@ -21,17 +50,6 @@ class AuthController {
             res.status(400).json({ error: error.message });
         }
     }
-
-    // Admin sign-up
-    static async adminSignup(req, res) {
-        try {
-            const admin = await AuthService.registerAdmin(req.body);
-            res.status(201).json({ message: 'Admin registered successfully', admin });
-        } catch (error) {
-            res.status(400).json({ error: error.message });
-        }
-    }
-
     // Admin login
     static async adminLogin(req, res) {
         try {
@@ -115,8 +133,8 @@ class AuthController {
         }
     }
 
-      // Send OTP for password reset
-      static async sendResetOTP(req, res) {
+    // Send OTP for password reset
+    static async sendResetOTP(req, res) {
         try {
             const { email } = req.body;
             const user = await AuthService.sendOTP(email);
@@ -148,7 +166,7 @@ class AuthController {
         }
     }
 }
-    
+
 
 
 export default AuthController;
