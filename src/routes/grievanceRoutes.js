@@ -5,7 +5,7 @@ import Grievance from '../models/grievanceModel.js';
 const router = express.Router();
 
 router.post('/submit', submitGrievance);
-router.post('/close/:ticketId', closeGrievance);
+router.post('/close/:ticketId', closeGrievance); // Updated to handle status changes
 router.get('/fetchgrievance', async (req, res) => {
   const { commonId } = req.query; // 'all' for admin, email for users
   console.log('Received commonId:', commonId);
@@ -13,10 +13,8 @@ router.get('/fetchgrievance', async (req, res) => {
   try {
     let grievances;
     if (commonId === 'all') {
-      // Fetch all grievances for admin
       grievances = await Grievance.find({});
     } else {
-      // Fetch grievances for the specific user
       grievances = await Grievance.find({ email: commonId });
     }
     res.json(grievances);

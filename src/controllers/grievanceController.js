@@ -12,8 +12,8 @@ export const submitGrievance = async (req, res) => {
 export const closeGrievance = async (req, res) => {
   try {
     const { ticketId } = req.params;
-    const { remarks } = req.body;
-    const updatedGrievance = await updateGrievanceStatus(ticketId, remarks);
+    const { status, remarks } = req.body; // Updated to accept status and remarks
+    const updatedGrievance = await updateGrievanceStatus(ticketId, status, remarks);
     res.status(200).json(updatedGrievance);
   } catch (err) {
     res.status(500).json({ message: err.message });
