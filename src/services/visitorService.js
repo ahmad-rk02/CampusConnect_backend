@@ -2,21 +2,16 @@ import Visitor from '../models/Visitor.js';
 
 class VisitorService {
   static async getVisitorCount() {
-    let visitorData = await Visitor.findOne();
-    if (!visitorData) {
-      visitorData = await Visitor.create({ count: 0 });
-    }
-    return visitorData;
+    const visitorData = await Visitor.findOne();
+    return visitorData || await Visitor.create({ count: 0 });
   }
 
   static async incrementVisitorCount() {
-    let visitorData = await Visitor.findOne();
-    if (!visitorData) {
-      visitorData = await Visitor.create({ count: 1 });
-    } else {
-      visitorData.count += 1;
-      await visitorData.save();
-    }
+    const visitorData = await Visitor.findOneAndUpdate(
+      {},
+      { $inc: { count: 1 } },
+      { new: true, upsert: true }
+    );
     return visitorData;
   }
 }
