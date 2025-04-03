@@ -4,6 +4,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import userRoutes from './src/routes/userRoutes.js';
 import grievanceRoutes from './src/routes/grievanceRoutes.js';
+import Visitor from './src/models/Visitor.js';
+import visitorRoutes from './src/routes/visitorRoutes.js';
+import { notFound, errorHandler } from './src/middleware/errorMiddleware.js';
 
 dotenv.config();
 
@@ -47,9 +50,14 @@ const connectDB = async () => {
 };
 connectDB();
 
+// Initialize visitor count
+Visitor.initializeCount();
+
+
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/grievances', grievanceRoutes);
+app.use('/api/visitors', visitorRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -57,8 +65,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
+// Test Route
 app.get('/', (req, res) => {
-  res.json({ message: 'Hello World' });
+  res.send('API is running...');
 });
+
+// Error Handling Middleware
+app.use(notFound);
+app.use(errorHandler);
 
 export default app;
