@@ -12,11 +12,14 @@ const userSchema = new mongoose.Schema({
     },
     prnNumber: {
         type: String,
-        required: function () {
-            return this.role === 'student'; // Required only for students
-        },
-        sparse: true,
+        required: true,
         unique: true,
+        validate: {
+            validator: function(v) {
+                return /^\d{4}033700\d{6}$/.test(v);
+            },
+            message: props => `${props.value} is not a valid PRN number!`
+        }
     },
     semester: {
         type: String,

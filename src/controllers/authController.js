@@ -5,8 +5,17 @@ const JWT_SECRET = 'your_jwt_secret'; //
 class AuthController {
     static async studentSignup(req, res) {
         try {
+            // Validate PRN format before proceeding
+            const prnPattern = /^\d{4}033700\d{6}$/;
+            if (!prnPattern.test(req.body.prnNumber)) {
+                return res.status(400).json({ error: "Invalid PRN format" });
+            }
+
             const user = await AuthService.registerStudent(req.body);
-            res.status(201).json({ message: 'OTP sent to email. Please verify to complete registration.', userId: user._id });
+            res.status(201).json({ 
+                message: 'OTP sent to email. Please verify to complete registration.', 
+                userId: user._id 
+            });
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
