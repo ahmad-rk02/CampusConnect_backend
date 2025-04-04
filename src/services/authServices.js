@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import otpGenerator from 'otp-generator';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
@@ -7,27 +6,13 @@ const JWT_SECRET = 'your_jwt_secret';
 const OTP_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 class AuthService {
-    static async registerStudent(data) {
-        const user = new User(data);
-        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
-        user.otp = otp;
-        user.otpExpiry = Date.now() + OTP_EXPIRY;
-        await user.save();
-        await this.sendOTP(user.email, otp);
-        return user;
+    // Generate guaranteed 6-digit numeric OTP
+    static generateOTP() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
     }
 
-    static async registerAdmin(data) {
-        const admin = new User({ ...data, role: 'admin' });
-        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
-        admin.otp = otp;
-        admin.otpExpiry = Date.now() + OTP_EXPIRY;
-        await admin.save();
-        await this.sendOTP(admin.email, otp);
-        return admin;
-    }
-
-    static async sendOTP(email, otp) {
+    // Common OTP email sender with styling
+    static async sendOTP(email, otp, purpose = 'Verification') {
         const user = await User.findOne({ email });
         if (!user) throw new Error('User not found');
 
@@ -39,37 +24,71 @@ class AuthService {
             },
         });
 
-        const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-            <div style="background-color: #102C57; padding: 20px; text-align: center;">
-                <h1 style="color: white; margin: 0;">CampusConnect</h1>
-            </div>
-            <div style="padding: 30px;">
-                <h2 style="color: #102C57; margin-top: 0;">Your OTP Code</h2>
-                <p style="font-size: 16px;">Hello,</p>
-                <p style="font-size: 16px;">Your verification code is:</p>
-                <div style="background-color: #f5f5f5; padding: 15px; text-align: center; border-radius: 5px; margin: 20px 0; font-size: 24px; letter-spacing: 5px; font-weight: bold; color: #102C57;">
-                    ${otp}
+        const emailTemplate = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+                .header { background-color: #102C57; padding: 20px; text-align: center; }
+                .header h1 { color: white; margin: 0; }
+                .content { padding: 20px; }
+                .otp-display { font-size: 24px; letter-spacing: 3px; color: #102C57; font-weight: bold; text-align: center; margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+                .footer { background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>CampusConnect</h1>
                 </div>
-                <p style="font-size: 16px;">This code is valid for 5 minutes. Please do not share it with anyone.</p>
-                <p style="font-size: 16px;">If you didn't request this code, you can safely ignore this email.</p>
+                <div class="content">
+                    <h2>Your ${purpose} OTP</h2>
+                    <p>Hello,</p>
+                    <p>Please use the following OTP to complete your ${purpose.toLowerCase()}:</p>
+                    <div class="otp-display">${otp}</div>
+                    <p>This OTP is valid for 5 minutes. Do not share it with anyone.</p>
+                    <p>If you didn't request this, please ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>© ${new Date().getFullYear()} Government College of Engineering Chandrapur</p>
+                </div>
             </div>
-            <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 14px; color: #666;">
-                <p style="margin: 0;">© ${new Date().getFullYear()} Government College of Engineering Chandrapur</p>
-            </div>
-        </div>
+        </body>
+        </html>
         `;
 
         await transporter.sendMail({
             from: '"CampusConnect" <razakhanahmad68@gmail.com>',
             to: email,
-            subject: 'Your Registration OTP Code',
-            html: htmlContent,
+            subject: `Your ${purpose} OTP Code`,
+            html: emailTemplate,
             text: `Your OTP code is ${otp}. It is valid for 5 minutes.`
         });
     }
 
-    // All other methods remain exactly the same as in your original code
+    // Original methods with numeric OTP
+    static async registerStudent(data) {
+        const user = new User(data);
+        const otp = this.generateOTP();
+        user.otp = otp;
+        user.otpExpiry = Date.now() + OTP_EXPIRY;
+        await user.save();
+        await this.sendOTP(user.email, otp, 'Registration');
+        return user;
+    }
+
+    static async registerAdmin(data) {
+        const admin = new User({ ...data, role: 'admin' });
+        const otp = this.generateOTP();
+        admin.otp = otp;
+        admin.otpExpiry = Date.now() + OTP_EXPIRY;
+        await admin.save();
+        await this.sendOTP(admin.email, otp, 'Registration');
+        return admin;
+    }
+
     static async verifySignupOTP(email, otp) {
         const user = await User.findOne({ email });
         if (!user) throw new Error('User not found');
@@ -88,14 +107,14 @@ class AuthService {
         if (!user) throw new Error('User not found');
         if (user.isVerified) throw new Error('User is already verified');
 
-        const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
+        const otp = this.generateOTP();
         user.otp = otp;
         user.otpExpiry = Date.now() + OTP_EXPIRY;
         await user.save();
-        await this.sendOTP(email, otp);
+        await this.sendOTP(email, otp, 'Verification');
         return { message: 'OTP resent successfully' };
     }
-    
+
     static async login(prnNumber, password) {
         const user = await User.findOne({ prnNumber });
         if (!user) throw new Error('User not found');
@@ -135,7 +154,9 @@ class AuthService {
     static async verifyOTP(email, otp) {
         const user = await User.findOne({ email });
         if (!user) throw new Error('User not found');
-        if (user.otp !== otp || Date.now() > user.otpExpiry) throw new Error('Invalid or expired OTP');
+        if (user.otp !== otp || Date.now() > user.otpExpiry) {
+            throw new Error('Invalid or expired OTP');
+        }
         user.otp = null;
         user.otpExpiry = null;
         await user.save();
