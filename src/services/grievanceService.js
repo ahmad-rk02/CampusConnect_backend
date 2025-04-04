@@ -43,15 +43,6 @@ const sendEmail = async (to, subject, text, isStatusUpdate = false) => {
           margin: 15px 0;
           border-left: 4px solid ${isStatusUpdate ? '#28a745' : '#ffc107'};
         }
-        .btn { 
-          display: inline-block; 
-          padding: 10px 20px; 
-          background-color: #102C57; 
-          color: white; 
-          text-decoration: none; 
-          border-radius: 5px; 
-          margin: 15px 0;
-        }
       </style>
     </head>
     <body>
@@ -104,7 +95,6 @@ export const createGrievance = async (formData) => {
         <p><strong>Status:</strong> Not Resolved</p>
       </div>
       <p>You will receive updates on this ticket via email.</p>
-      <a href="#" class="btn">View Grievance</a>
       <p>Best Regards,<br>Administration</p>
     `;
 
@@ -143,7 +133,6 @@ export const updateGrievanceStatus = async (ticketId, status, remarks) => {
           <p><strong>Remarks:</strong> ${remarks || 'No remarks provided'}</p>
         </div>
         <p>Our team is currently working on your grievance.</p>
-        <a href="#" class="btn">View Grievance</a>
         <p>Best Regards,<br>Administration</p>
       `;
     } else if (status === 'resolved') {
@@ -155,7 +144,6 @@ export const updateGrievanceStatus = async (ticketId, status, remarks) => {
           <p><strong>Remarks:</strong> ${remarks || 'No remarks provided'}</p>
         </div>
         <p>Your grievance has been successfully resolved.</p>
-        <a href="#" class="btn">View Resolution</a>
         <p>Best Regards,<br>Administration</p>
       `;
     }
