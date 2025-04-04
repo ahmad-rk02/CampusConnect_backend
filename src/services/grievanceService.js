@@ -6,21 +6,77 @@ const generateTicketId = () => {
   return 'TKT' + Math.random().toString(36).substr(2, 9).toUpperCase();
 };
 
-// Function to send email
-const sendEmail = async (to, subject, text) => {
+// Function to send styled email
+const sendEmail = async (to, subject, text, isStatusUpdate = false) => {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: 'razakhanahmad68@gmail.com',
-      pass: 'kbol dggl zzzt xumr', // Use an app-specific password
+      pass: 'kbol dggl zzzt xumr',
     },
   });
+
+  const createEmailTemplate = (content, isStatusUpdate) => {
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+        .email-container { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        .header { background-color: #102C57; padding: 20px; text-align: center; }
+        .header h1 { color: white; margin: 0; }
+        .content { padding: 20px; }
+        .footer { background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+        .ticket-id { 
+          background-color: #f0f7ff; 
+          padding: 10px; 
+          border-radius: 5px; 
+          font-weight: bold; 
+          color: #102C57;
+          margin: 15px 0;
+        }
+        .status-update {
+          background-color: ${isStatusUpdate ? '#e6f7e6' : '#fff4e6'};
+          padding: 15px;
+          border-radius: 5px;
+          margin: 15px 0;
+          border-left: 4px solid ${isStatusUpdate ? '#28a745' : '#ffc107'};
+        }
+        .btn { 
+          display: inline-block; 
+          padding: 10px 20px; 
+          background-color: #102C57; 
+          color: white; 
+          text-decoration: none; 
+          border-radius: 5px; 
+          margin: 15px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <h1>CampusConnect</h1>
+        </div>
+        <div class="content">
+          ${content}
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} Government College of Engineering Chandrapur</p>
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+  };
 
   const mailOptions = {
     from: '"CampusConnect" <razakhanahmad68@gmail.com>',
     to: to,
     subject: subject,
-    text: text,
+    html: createEmailTemplate(text, isStatusUpdate),
+    text: text // Plain text fallback
   };
 
   await transporter.sendMail(mailOptions);
@@ -33,13 +89,30 @@ export const createGrievance = async (formData) => {
     const grievance = new Grievance({
       ...formData,
       ticketId,
-      status: 'not resolved', // Default status
+      status: 'not resolved',
     });
 
     await grievance.save();
 
-    const emailText = `Dear ${formData.fullname},\n\nYour grievance has been submitted successfully.\n\nTicket ID: ${ticketId}\nType: ${formData.grievanceType}\nMessage: ${formData.message}\nStatus: Not Resolved\n\nBest Regards,\nAdministration`;
-    await sendEmail(formData.email, 'Grievance Submission Confirmation', emailText);
+    const emailContent = `
+      <p>Dear ${formData.fullname},</p>
+      <p>Your grievance has been submitted successfully.</p>
+      <div class="ticket-id">Ticket ID: ${ticketId}</div>
+      <p><strong>Type:</strong> ${formData.grievanceType}</p>
+      <p><strong>Message:</strong> ${formData.message}</p>
+      <div class="status-update">
+        <p><strong>Status:</strong> Not Resolved</p>
+      </div>
+      <p>You will receive updates on this ticket via email.</p>
+      <a href="#" class="btn">View Grievance</a>
+      <p>Best Regards,<br>Administration</p>
+    `;
+
+    await sendEmail(
+      formData.email, 
+      'Grievance Submission Confirmation', 
+      emailContent
+    );
 
     return grievance;
   } catch (err) {
@@ -60,13 +133,39 @@ export const updateGrievanceStatus = async (ticketId, status, remarks) => {
       { new: true }
     );
 
-    let emailText;
+    let emailContent = '';
     if (status === 'in progress') {
-      emailText = `Dear ${grievance.fullname},\n\nYour grievance ticket with ID ${ticketId} is now in progress.\n\nRemarks: ${remarks || 'None'}\n\nBest Regards,\nAdministration`;
+      emailContent = `
+        <p>Dear ${grievance.fullname},</p>
+        <div class="ticket-id">Ticket ID: ${ticketId}</div>
+        <div class="status-update">
+          <p><strong>Status Update:</strong> In Progress</p>
+          <p><strong>Remarks:</strong> ${remarks || 'No remarks provided'}</p>
+        </div>
+        <p>Our team is currently working on your grievance.</p>
+        <a href="#" class="btn">View Grievance</a>
+        <p>Best Regards,<br>Administration</p>
+      `;
     } else if (status === 'resolved') {
-      emailText = `Dear ${grievance.fullname},\n\nYour grievance ticket with ID ${ticketId} has been resolved.\n\nRemarks: ${remarks || 'None'}\n\nBest Regards,\nAdministration`;
+      emailContent = `
+        <p>Dear ${grievance.fullname},</p>
+        <div class="ticket-id">Ticket ID: ${ticketId}</div>
+        <div class="status-update">
+          <p><strong>Status Update:</strong> Resolved</p>
+          <p><strong>Remarks:</strong> ${remarks || 'No remarks provided'}</p>
+        </div>
+        <p>Your grievance has been successfully resolved.</p>
+        <a href="#" class="btn">View Resolution</a>
+        <p>Best Regards,<br>Administration</p>
+      `;
     }
-    await sendEmail(grievance.email, `Grievance Status Update: ${status}`, emailText);
+
+    await sendEmail(
+      grievance.email, 
+      `Grievance Status Update: ${status}`, 
+      emailContent,
+      true
+    );
 
     return updatedGrievance;
   } catch (err) {
