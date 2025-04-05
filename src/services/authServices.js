@@ -13,18 +13,19 @@ class AuthService {
 
     // Common OTP email sender with styling
     static async sendOTP(email, otp, purpose = 'Verification') {
-        const user = await User.findOne({ email });
-        if (!user) throw new Error('User not found');
+        try {
+            const user = await User.findOne({ email });
+            if (!user) throw new Error('User not found');
 
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: 'razakhanahmad68@gmail.com',
-                pass: 'kbol dggl zzzt xumr',
-            },
-        });
+            const transporter = nodemailer.createTransport({
+                service: 'Gmail',
+                auth: {
+                    user: 'razakhanahmad68@gmail.com',
+                    pass: 'kbol dggl zzzt xumr',
+                },
+            });
 
-        const emailTemplate = `
+            const emailTemplate = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -59,14 +60,72 @@ class AuthService {
         </html>
         `;
 
-        await transporter.sendMail({
-            from: '"CampusConnect" <razakhanahmad68@gmail.com>',
-            to: email,
-            subject: `Your ${purpose} OTP Code`,
-            html: emailTemplate,
-            text: `Your OTP code is ${otp}. It is valid for 5 minutes.`
-        });
+            const mailOptions = {
+                from: '"CampusConnect" <razakhanahmad68@gmail.com>',
+                to: email,
+                subject: `Your ${purpose} OTP Code`,
+                html: emailTemplate,
+                text: `Your OTP code is ${otp}. It is valid for 5 minutes.`
+            };
+
+            await transporter.sendMail(mailOptions);
+            return { success: true, message: 'OTP sent successfully' };
+        } catch (error) {
+            console.error('Error sending OTP:', error);
+            throw new Error('Failed to send OTP');
+        }
     }
+
+    static async sendResetOTP(email) {
+        try {
+            const user = await User.findOne({ email });
+            if (!user) throw new Error('User not found');
+
+            const otp = this.generateOTP();
+            user.otp = otp;
+            user.otpExpiry = Date.now() + OTP_EXPIRY;
+            await user.save();
+
+            await this.sendOTP(email, otp, 'Password Reset');
+            return { success: true, message: 'OTP sent successfully' };
+        } catch (error) {
+            console.error('Error in sendResetOTP:', error);
+            throw error;
+        }
+    }
+
+    static async verifyResetOTP(email, otp) {
+        try {
+            const user = await User.findOne({ email });
+            if (!user) throw new Error('User not found');
+            if (user.otp !== otp || Date.now() > user.otpExpiry) {
+                throw new Error('Invalid or expired OTP');
+            }
+            user.otp = null;
+            user.otpExpiry = null;
+            await user.save();
+            return { success: true, message: 'OTP verified successfully' };
+        } catch (error) {
+            console.error('Error in verifyResetOTP:', error);
+            throw error;
+        }
+    }
+
+    static async resetPassword(email, newPassword) {
+        try {
+            const user = await User.findOne({ email });
+            if (!user) throw new Error('User not found');
+
+            user.password = newPassword;
+            await user.save();
+
+            return { success: true, message: 'Password reset successfully' };
+        } catch (error) {
+            console.error('Error in resetPassword:', error);
+            throw error;
+        }
+    }
+
 
     // Original methods with numeric OTP
     static async registerStudent(data) {
@@ -87,32 +146,6 @@ class AuthService {
         await admin.save();
         await this.sendOTP(admin.email, otp, 'Registration');
         return admin;
-    }
-
-    static async verifySignupOTP(email, otp) {
-        const user = await User.findOne({ email });
-        if (!user) throw new Error('User not found');
-        if (user.otp !== otp || Date.now() > user.otpExpiry) {
-            throw new Error('Invalid or expired OTP');
-        }
-        user.otp = null;
-        user.otpExpiry = null;
-        user.isVerified = true;
-        await user.save();
-        return user;
-    }
-
-    static async resendOTP(email) {
-        const user = await User.findOne({ email });
-        if (!user) throw new Error('User not found');
-        if (user.isVerified) throw new Error('User is already verified');
-
-        const otp = this.generateOTP();
-        user.otp = otp;
-        user.otpExpiry = Date.now() + OTP_EXPIRY;
-        await user.save();
-        await this.sendOTP(email, otp, 'Verification');
-        return { message: 'OTP resent successfully' };
     }
 
     static async login(prnNumber, password) {

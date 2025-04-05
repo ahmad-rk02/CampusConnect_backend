@@ -133,34 +133,31 @@ class AuthController {
         }
     }
 
-    // Send OTP for password reset
     static async sendResetOTP(req, res) {
         try {
             const { email } = req.body;
-            const user = await AuthService.sendOTP(email);
-            res.status(200).json({ message: 'OTP sent to your email', user });
+            const result = await AuthService.sendResetOTP(email);
+            res.status(200).json(result);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
     }
 
-    // Verify OTP
     static async verifyResetOTP(req, res) {
         try {
             const { email, otp } = req.body;
-            const user = await AuthService.verifyOTP(email, otp);
-            res.status(200).json({ message: 'OTP verified successfully', user });
+            const result = await AuthService.verifyResetOTP(email, otp);
+            res.status(200).json(result);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
     }
 
-    // Reset password
     static async resetPassword(req, res) {
         try {
             const { email, newPassword } = req.body;
-            const user = await AuthService.resetPassword(email, newPassword);
-            res.status(200).json({ message: 'Password reset successfully', user });
+            const result = await AuthService.resetPassword(email, newPassword);
+            res.status(200).json(result);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
