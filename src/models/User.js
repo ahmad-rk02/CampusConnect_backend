@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
             return this.role === 'student'; // Required only for students
         },
         sparse: true,
-        unique: true,
+        default: undefined // Prevents storing null values
     },
     semester: {
         type: String,
@@ -31,14 +31,14 @@ const userSchema = new mongoose.Schema({
         }
     },
     password: { type: String, required: true },
-    role: { type: String, enum: ['student', 'admin'], default: 'student' }, // To differentiate users
+    role: { type: String, enum: ['student', 'admin'], default: 'student' },
     dte: {
         type: String,
         required: function () {
             return this.role === 'admin'; // Required only for admins
         },
         sparse: true,
-        unique: true, // Ensure DTE is unique for admins
+        default: undefined // Prevents storing null values
     },
     committee: {
         type: String,
@@ -46,9 +46,9 @@ const userSchema = new mongoose.Schema({
             return this.role === 'admin'; // Required only for admins
         }
     },
-    otp: { type: String, default: null }, // OTP for verification
-    otpExpiry: { type: Number, default: null }, // Timestamp for OTP expiry (in milliseconds)
-    isVerified: { type: Boolean, default: false }, // Tracks if the user is verified
+    otp: { type: String, default: null },
+    otpExpiry: { type: Number, default: null },
+    isVerified: { type: Boolean, default: false },
 });
 
 // Hash the password before saving
@@ -64,25 +64,32 @@ userSchema.methods.comparePassword = async function (password) {
     return bcrypt.compare(password, this.password);
 };
 
-// Add a unique index for prnNumber but only for students
+// Unique index for prnNumber (students only)
 userSchema.index(
-    { prnNumber: 1, role: 1 },
+    { prnNumber: 1 },
     {
         unique: true,
-        sparse: true,
-        partialFilterExpression: { role: 'student' } // Only apply uniqueness for students
+        partialFilterExpression: { 
+            role: 'student',
+            prnNumber: { $exists: true, $type: 'string' }
+        }
     }
 );
 
-// Add a unique index for dte but only for admins
+// Unique index for dte (admins only)
 userSchema.index(
-    { dte: 1, role: 1 },
+    { dte: 1 },
     {
         unique: true,
-        sparse: true,
-        partialFilterExpression: { role: 'admin' } // Only apply uniqueness for admins
+        partialFilterExpression: { 
+            role: 'admin',
+            dte: { $exists: true, $type: 'string' }
+        }
     }
 );
+
+// Ensure email is always unique
+userSchema.index({ email: 1 }, { unique: true });
 
 const User = mongoose.model('User', userSchema);
 export default User;
