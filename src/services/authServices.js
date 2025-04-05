@@ -126,6 +126,31 @@ class AuthService {
         }
     }
 
+    static async verifySignupOTP(email, otp) {
+        const user = await User.findOne({ email });
+        if (!user) throw new Error('User not found');
+        if (user.otp !== otp || Date.now() > user.otpExpiry) {
+            throw new Error('Invalid or expired OTP');
+        }
+        user.otp = null;
+        user.otpExpiry = null;
+        user.isVerified = true;
+        await user.save();
+        return user;
+    }
+
+    static async resendOTP(email) {
+        const user = await User.findOne({ email });
+        if (!user) throw new Error('User not found');
+        if (user.isVerified) throw new Error('User is already verified');
+
+        const otp = this.generateOTP();
+        user.otp = otp;
+        user.otpExpiry = Date.now() + OTP_EXPIRY;
+        await user.save();
+        await this.sendOTP(email, otp, 'Verification');
+        return { message: 'OTP resent successfully' };
+    }
 
     // Original methods with numeric OTP
     static async registerStudent(data) {
