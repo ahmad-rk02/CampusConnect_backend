@@ -15,7 +15,7 @@ const app = express();
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173', // Local development (adjust port if different)
-  'https://gcoec.netlify.app/', // Your deployed frontend domain
+  'https://gcoec.netlify.app', // Your deployed frontend domain
   // Add any other frontend domains as needed
 ];
 
