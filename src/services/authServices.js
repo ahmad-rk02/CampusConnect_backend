@@ -61,11 +61,12 @@ class AuthService {
         `;
 
             const mailOptions = {
-                from: '"CampusConnect" <razakhanahmad68@gmail.com>',
+                from: '"no-reply" <razakhanahmad68@gmail.com>',
                 to: email,
                 subject: `Your ${purpose} OTP Code`,
                 html: emailTemplate,
-                text: `Your OTP code is ${otp}. It is valid for 5 minutes.`
+                text: `Your OTP code is ${otp}. It is valid for 5 minutes.`,
+                replyTo: 'no-reply@campusconnect.com'
             };
 
             await transporter.sendMail(mailOptions);

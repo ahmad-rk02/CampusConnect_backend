@@ -63,12 +63,14 @@ const sendEmail = async (to, subject, text, isStatusUpdate = false) => {
   };
 
   const mailOptions = {
-    from: '"CampusConnect" <razakhanahmad68@gmail.com>',
+    from: '"no-reply" <razakhanahmad68@gmail.com>',
     to: to,
     subject: subject,
     html: createEmailTemplate(text, isStatusUpdate),
-    text: text // Plain text fallback
+    text: text,
+    replyTo: 'no-reply@campusconnect.com',
   };
+
 
   await transporter.sendMail(mailOptions);
 };
@@ -99,8 +101,8 @@ export const createGrievance = async (formData) => {
     `;
 
     await sendEmail(
-      formData.email, 
-      'Grievance Submission Confirmation', 
+      formData.email,
+      'Grievance Submission Confirmation',
       emailContent
     );
 
@@ -149,8 +151,8 @@ export const updateGrievanceStatus = async (ticketId, status, remarks) => {
     }
 
     await sendEmail(
-      grievance.email, 
-      `Grievance Status Update: ${status}`, 
+      grievance.email,
+      `Grievance Status Update: ${status}`,
       emailContent,
       true
     );
